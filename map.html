@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Track Motorbikes with Paths</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        .controls {
+            margin-top: 10px;
+        }
+        .controls button {
+            margin-right: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Track Motorbikes with Paths</h1>
+    <!-- Leaflet Map -->
+    <div id="map"></div>
+
+    <!-- Toggle Controls -->
+    <div class="controls">
+        <button id="toggle-tracking">Track Bikes</button>
+        <button id="show-paths">Show Paths</button>
+    </div>
+
+    <script>
+        // Initialize Leaflet Map
+        var map = L.map('map').setView([21.0227396, 105.8369637], 13);
+
+        // Add OpenStreetMap Tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Motorbike Icons
+        function createBikeIcon(color) {
+            return L.divIcon({
+                html: `<div style="background-color:${color};border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">🏍</div>`,
+                iconSize: [20, 20]
+            });
+        }
+
+        // Bike Data
+        var bikes = [
+            { name: "Bike 1", coords: [21.0227396, 105.8369637], color: "red", marker: null },
+            { name: "Bike 2", coords: [21.0247396, 105.8379637], color: "blue", marker: null },
+            { name: "Bike 3", coords: [21.0267396, 105.8399637], color: "green", marker: null }
+        ];
+
+        // Define Paths for Each Bike
+        const paths = [
+            [[21.0227396, 105.8369637], [21.0237396, 105.8379637], [21.0247396, 105.8389637]],
+            [[21.0247396, 105.8379637], [21.0257396, 105.8389637], [21.0267396, 105.8399637]],
+            [[21.0267396, 105.8399637], [21.0277396, 105.8409637], [21.0287396, 105.8419637]]
+        ];
+
+        // Add Markers and Polyline for Bikes
+        bikes.forEach((bike, index) => {
+            // Add Marker
+            bike.marker = L.marker(bike.coords, { icon: createBikeIcon(bike.color) })
+                .bindPopup(`${bike.name} is here!`);
+        });
+
+        // Function to Toggle Tracking
+        var trackingEnabled = false;
+        function toggleTracking() {
+            trackingEnabled = !trackingEnabled;
+
+            bikes.forEach((bike) => {
+                if (trackingEnabled) {
+                    bike.marker.addTo(map); // Show markers
+                } else {
+                    map.removeLayer(bike.marker); // Remove markers
+                }
+            });
+
+            document.getElementById('toggle-tracking').innerText = trackingEnabled
+                ? "Stop Tracking"
+                : "Track Bikes";
+        }
+
+        // Show Paths on the Map
+        var pathPolylines = [];
+        function showPaths() {
+            // Remove existing paths if already added
+            if (pathPolylines.length > 0) {
+                pathPolylines.forEach((polyline) => map.removeLayer(polyline));
+                pathPolylines = [];
+                document.getElementById('show-paths').innerText = "Show Paths";
+                return;
+            }
+
+            // Draw paths
+            paths.forEach((path, index) => {
+                const polyline = L.polyline(path, { color: bikes[index].color, weight: 3 }).addTo(map);
+                pathPolylines.push(polyline);
+            });
+
+            document.getElementById('show-paths').innerText = "Hide Paths";
+        }
+
+        // Simulate Bike Movement
+        function moveBike(index, path) {
+            let i = 0;
+            setInterval(() => {
+                if (trackingEnabled) {
+                    bikes[index].coords = path[i]; // Update coordinates
+                    bikes[index].marker.setLatLng(path[i]); // Update marker position
+                    i = (i + 1) % path.length; // Loop through path
+                }
+            }, 2000); // Move every 2 seconds
+        }
+
+        // Start Moving Bikes
+        paths.forEach((path, index) => moveBike(index, path));
+
+        // Event Listeners for Buttons
+        document.getElementById('toggle-tracking').addEventListener('click', toggleTracking);
+        document.getElementById('show-paths').addEventListener('click', showPaths);
+    </script>
+</body>
+</html>
